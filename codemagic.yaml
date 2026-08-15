@@ -1,0 +1,18 @@
+workflows:
+  android-debug:
+    name: TicTacToe Android APK
+    max_build_duration: 60
+    instance_type: linux_x2
+    environment:
+      java: 17
+    scripts:
+      - name: Set Android SDK location
+        script: |
+          echo "sdk.dir=$ANDROID_SDK_ROOT" > "$CM_BUILD_DIR/tictactoe/local.properties"
+      - name: Build debug APK
+        script: |
+          cd "$CM_BUILD_DIR/tictactoe"
+          gradle --version
+          gradle assembleDebug --no-daemon
+    artifacts:
+      - tictactoe/app/build/outputs/apk/debug/app-debug.apk
