@@ -1,6 +1,0 @@
-<resources>
-    <style name="Theme.TicTacToePremium" parent="android:Theme.Material.NoActionBar">
-        <item name="android:statusBarColor">#0B0E1A</item>
-        <item name="android:windowBackground">#0B0E1A</item>
-    </style>
-</resources>
