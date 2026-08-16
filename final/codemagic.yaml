@@ -1,0 +1,35 @@
+workflows:
+  android-debug:
+    name: TicTacToe Premium - Android Debug APK
+    max_build_duration: 60
+    instance_type: linux_x2
+    environment:
+      java: 17
+    scripts:
+      - name: Verify project
+        script: |
+          echo "=== Gradle ==="
+          gradle --version
+          echo "=== Project ==="
+          test -f settings.gradle.kts
+          test -f app/build.gradle.kts
+          test -f app/src/main/java/com/namvar/tictactoe/MainActivity.kt
+      - name: Build debug APK
+        script: |
+          gradle clean assembleDebug --no-daemon --stacktrace
+    artifacts:
+      - app/build/outputs/apk/debug/app-debug.apk
+
+  android-release-unsigned:
+    name: TicTacToe Premium - Release (unsigned)
+    max_build_duration: 60
+    instance_type: linux_x2
+    environment:
+      java: 17
+    scripts:
+      - name: Build release artifacts
+        script: |
+          gradle clean assembleRelease bundleRelease --no-daemon --stacktrace
+    artifacts:
+      - app/build/outputs/apk/release/app-release-unsigned.apk
+      - app/build/outputs/bundle/release/app-release.aab
