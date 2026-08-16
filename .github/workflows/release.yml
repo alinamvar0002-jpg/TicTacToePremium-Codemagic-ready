@@ -1,4 +1,4 @@
-name: Build Signed Release APK
+name: Build TicTacToe Release APK
 
 on:
   workflow_dispatch:
@@ -11,13 +11,13 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Set up Java 17
+      - name: Setup Java 17
         uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: '17'
 
-      - name: Set up Gradle
+      - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '8.14.3'
@@ -26,12 +26,11 @@ jobs:
         run: |
           gradle clean assembleRelease --no-daemon --stacktrace
 
-      - name: Create signing key
+      - name: Create Release Keystore
         run: |
           keytool -genkeypair \
-            -v \
             -keystore release-key.jks \
-            -alias tictactoe \
+            -alias tictactoe-release \
             -keyalg RSA \
             -keysize 2048 \
             -validity 10000 \
@@ -39,27 +38,46 @@ jobs:
             -keypass "tictactoe123" \
             -dname "CN=TicTacToe Premium, OU=Namvar, O=Namvar, L=Karaj, ST=Alborz, C=IR"
 
+      - name: Find Android Build Tools
+        run: |
+          echo "ANDROID_HOME=$ANDROID_HOME"
+          find "$ANDROID_HOME/build-tools" -name zipalign
+          find "$ANDROID_HOME/build-tools" -name apksigner
+
+      - name: Align APK
+        run: |
+          ZIPALIGN=$(find "$ANDROID_HOME/build-tools" -name zipalign | sort -V | tail -n 1)
+
+          "$ZIPALIGN" -v -p 4 \
+            app/build/outputs/apk/release/app-release-unsigned.apk \
+            app-release-aligned.apk
+
       - name: Sign APK
         run: |
           APKSIGNER=$(find "$ANDROID_HOME/build-tools" -name apksigner | sort -V | tail -n 1)
 
           "$APKSIGNER" sign \
             --ks release-key.jks \
-            --ks-key-alias tictactoe \
+            --ks-key-alias tictactoe-release \
             --ks-pass pass:tictactoe123 \
             --key-pass pass:tictactoe123 \
-            --out app-release-signed.apk \
-            app/build/outputs/apk/release/app-release-unsigned.apk
+            --out TicTacToe-Premium-release.apk \
+            app-release-aligned.apk
 
-      - name: Verify APK
+      - name: Verify Release APK
         run: |
           APKSIGNER=$(find "$ANDROID_HOME/build-tools" -name apksigner | sort -V | tail -n 1)
-          "$APKSIGNER" verify --verbose app-release-signed.apk
 
-      - name: Upload APK and signing key
+          "$APKSIGNER" verify --verbose TicTacToe-Premium-release.apk
+
+      - name: Upload ONLY final APK
         uses: actions/upload-artifact@v4
         with:
-          name: TicTacToe-Premium-Release
-          path: |
-            app-release-signed.apk
-            release-key.jks
+          name: TicTacToe-Premium-FINAL
+          path: TicTacToe-Premium-release.apk
+
+      - name: Upload signing key separately
+        uses: actions/upload-artifact@v4
+        with:
+          name: TicTacToe-Premium-KEY-KEEP-SAFE
+          path: release-key.jks
